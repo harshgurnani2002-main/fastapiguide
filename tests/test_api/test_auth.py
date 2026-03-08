@@ -35,9 +35,8 @@ def test_login_access_token(client: TestClient):
     )
     
     # 2. Attempt to login
-    # OAuth2 specifies we send data as form data, not JSON!
-    login_data = {"username": email, "password": password}
-    response = client.post("/api/v1/auth/access-token", data=login_data)
+    login_data = {"email": email, "password": password}
+    response = client.post("/api/v1/auth/login", json=login_data)
     
     assert response.status_code == 200, response.text
     tokens = response.json()
@@ -57,7 +56,7 @@ def test_test_token(client: TestClient):
         json={"email": email, "password": password, "is_active": True},
     )
     login_response = client.post(
-        "/api/v1/auth/access-token", data={"username": email, "password": password}
+        "/api/v1/auth/login", json={"email": email, "password": password}
     )
     token = login_response.json()["access_token"]
     
@@ -73,7 +72,7 @@ def test_test_token(client: TestClient):
     
 def test_test_token_fails_without_auth(client: TestClient):
     """
-    Verifies that accessing a protected route without a token fails with a 401.
+    Verifies that accessing a protected route without a token fails with a 403.
     """
     response = client.post("/api/v1/auth/test-token")
-    assert response.status_code == 401
+    assert response.status_code == 403
