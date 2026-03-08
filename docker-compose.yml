@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web:
+    # Build the Docker image using the Dockerfile in the current directory
+    build: .
+
+    # Map port 8000 on the host to port 8000 on the container
+    ports:
+      - "8000:8000"
+
+    # Mount the local directory to /app in the container for live reloading
+    # This allows us to see code changes without rebuilding the image
+    volumes:
+      - .:/app
+
+    # Load environment variables from the .env file (if it exists)
+    env_file:
+      - .env.example # Using .env.example as default for the sake of the tutorial. In real prod, use .env
+
+    # Optionally override the command to run Uvicorn with reload enabled
+    # This is great for development, giving us server restarts on code changes
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
