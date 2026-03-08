@@ -22,6 +22,14 @@ class UserCreate(UserBase):
     password: str
 
 # -----------------
+# Login Schema
+# -----------------
+# When a client wants to log in, they provide their email and password in a JSON body.
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+# -----------------
 # Update Schema
 # -----------------
 # When updating, all fields are optional. A client might only update one field.

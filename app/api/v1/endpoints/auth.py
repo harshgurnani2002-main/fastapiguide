@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api import deps
@@ -11,27 +10,26 @@ from app.core.security import create_access_token
 from app.core.exceptions import BadRequestException
 from app.models.user import User
 from app.schemas.token import Token
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserLogin
 from app.services.auth import AuthService
 from app.repositories.user import UserRepository
 
 # An APIRouter groups related endpoints together.
 router = APIRouter()
 
-@router.post("/access-token", response_model=Token)
-def login_access_token(
-    # Depends injects the database session and the parsed OAuth2 form data
-    db: Session = Depends(deps.get_db),
-    form_data: OAuth2PasswordRequestForm = Depends()
+@router.post("/login", response_model=Token)
+def login(
+    login_data: UserLogin,
+    db: Session = Depends(deps.get_db)
 ) -> Any:
     """
-    OAuth2 compatible token login, getting an access token for future requests.
-    This is the endpoint we configured 'reusable_oauth2' to point to in deps.py.
+    Basic login endpoint. Accepts email and password in a JSON body.
+    Returns a JWT token required for accessing protected routes.
     """
     auth_service = AuthService(db)
     
     # 1. Authenticate user
-    user = auth_service.authenticate_user(form_data)
+    user = auth_service.authenticate_user(email=login_data.email, password=login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -2,22 +2,20 @@ from typing import Generator, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedException, ForbiddenException
+from app.core.exceptions import UnauthorizedException, ForbiddenException, NotFoundException
 from app.db.session import SessionLocal
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.token import TokenPayload
 
-# Creates an OAuth2 scheme instance that will look for a Bearer token in the 'Authorization' header.
-# "tokenUrl" tells tools like Swagger UI where to send the username/password to get the token.
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/auth/access-token"
-)
+# Use HTTPBearer for simple JSON web token handling.
+# This replaces the complex OAuth2PasswordBearer form.
+reusable_oauth2 = HTTPBearer()
 
 def get_db() -> Generator:
     """
@@ -35,18 +33,16 @@ def get_db() -> Generator:
         db.close()
 
 def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
+    db: Session = Depends(get_db), token: HTTPAuthorizationCredentials = Depends(reusable_oauth2)
 ) -> User:
     """
     Dependency function to verify a JWT token and extract the currently authenticated User.
-    It chains two other dependencies:
-    1. get_db: to fetch from the database
-    2. reusable_oauth2: to extract the raw token string from the request headers
     """
     try:
         # We attempt to decode the token. Settings specifies algorithm and secret.
+        # token.credentials contains the actual string token passed in the Authorization header.
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         # We parse the decoded dictionary into a Pydantic TokenPayload schema class.
         token_data = TokenPayload(**payload)

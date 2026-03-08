@@ -16,7 +16,7 @@ def user_token_headers(client: TestClient) -> dict:
     )
     
     login_response = client.post(
-        "/api/v1/auth/access-token", data={"username": email, "password": password}
+        "/api/v1/auth/login", json={"email": email, "password": password}
     )
     token = login_response.json()["access_token"]
     
